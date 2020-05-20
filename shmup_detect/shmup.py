@@ -274,8 +274,8 @@ def start_menu():
     screen.blit(background,background_rect)
     draw_text(screen,"Welcome !", 64, WIDTH / 2, HEIGHT / 4)
     draw_text(screen, "Here is guidance", 30, WIDTH / 2, HEIGHT / 4+70)
-    draw_text(screen,"Use mouse to draw a rectangle, ",22,WIDTH/2, HEIGHT/2)
-    draw_text(screen,"selecting the moving object ",22, WIDTH/2,HEIGHT/2+30)
+    draw_text(screen,"Only able to detect fist or palm, ",22,WIDTH/2, HEIGHT/2)
+    draw_text(screen,"Hold on until showing yellow box for some seconds",22, WIDTH/2,HEIGHT/2+30)
     draw_text(screen, "Press any key to continue..", 18, WIDTH / 2, HEIGHT*3 / 4)
     pygame.display.flip()
     waiting = True
