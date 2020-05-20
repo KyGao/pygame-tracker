@@ -12,6 +12,7 @@ import random
 from settings import *
 from sprites import *
 from os import path
+import cv2
 
 
 
@@ -140,6 +141,7 @@ class Game:
         tracker = kcftracker.KCFTracker(True, True, True)
         cv2.namedWindow('tracking')
         cv2.setMouseCallback('tracking',draw_boundingbox)
+        jump_cnt = 0  # count jump time
         while cap.isOpened() and self.playing:
             ret, frame = cap.read()
             if not ret:
@@ -166,12 +168,16 @@ class Game:
                 cv2.rectangle(frame, (boundingbox[0], boundingbox[1]),(boundingbox[0] + boundingbox[2], boundingbox[1] + boundingbox[3]), (0, 255, 255), 1)
                 duration = 0.8 * duration + 0.2 * (t1 - t0)
                 # duration = t1-t0
+                
                 cv2.putText(frame, 'FPS: ' + str(1 / duration)[:4].strip('.'), (8, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6,(0, 0, 255), 2)
                 
+                if jump_cnt <= 0:
+                    jump_cnt = last_y - boundingbox[1]
                 self.clock.tick(FPS)
-                self.events()
+                self.events(jump_cnt > 0)
                 self.update(center)
                 self.draw()
+                jump_cnt -= 10
                 
             cv2.imshow('tracking', frame)
             c = cv2.waitKey(inteval) & 0xFF
@@ -249,7 +255,7 @@ class Game:
             Platform(self, random.randrange(0, WIDTH - width),
                      random.randrange(-75, -30))
 
-    def events(self):
+    def events(self, jump):
         # Game Loop - events
         for event in pg.event.get():
             # check for closing window
@@ -257,13 +263,19 @@ class Game:
                 if self.playing:
                     self.playing = False
                 self.running = False
+        if jump:
+            self.player.jump()
+        else:
+            self.player.jump_cut()
+                
+            '''
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE:
                     self.player.jump()
             if event.type == pg.KEYUP:
                 if event.key == pg.K_SPACE:
                     self.player.jump_cut()
-
+            '''
     def draw(self):
         # Game Loop - draw
         self.screen.fill(BGCOLOR)
@@ -277,9 +289,11 @@ class Game:
         pg.mixer.music.load(path.join(self.snd_dir, 'Yippee.ogg'))
         pg.mixer.music.play(loops=-1)
         self.screen.fill(BGCOLOR)
-        self.draw_text(TITLE, 48, WHITE, WIDTH / 2, HEIGHT / 4)
-        self.draw_text("Arrows to move, Space to jump", 22, WHITE, WIDTH / 2, HEIGHT / 2)
-        self.draw_text("Press a key to play", 22, WHITE, WIDTH / 2, HEIGHT * 3 / 4)
+        self.draw_text("Guidance", 48, WHITE, WIDTH / 2, HEIGHT / 4)
+        self.draw_text("Use mouse to draw a rectangle, ",22, WHITE, WIDTH/2, HEIGHT/4+90)
+        self.draw_text("selecting the moving object", 22, WHITE, WIDTH / 2, HEIGHT / 4+120)
+        self.draw_text("Move up to jump!", 22, WHITE, WIDTH / 2, HEIGHT / 2)
+        self.draw_text("Press a key to continue", 22, WHITE, WIDTH / 2, HEIGHT * 3 / 4)
         self.draw_text("High Score: " + str(self.highscore), 22, WHITE, WIDTH / 2, 15)
         pg.display.flip()
         self.wait_for_key()

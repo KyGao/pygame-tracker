@@ -8,7 +8,7 @@ import numpy as np
 import cv2
 import sys
 from time import time
-
+import os
 import kcftracker
 
 img_dir = path.join(path.dirname(__file__), 'img')
@@ -67,6 +67,9 @@ def draw_boundingbox(event, x, y, flags, param):
 
 
 # initialize pygame and create window
+xx=50
+yy=70
+os.environ['SDL_VIDEO_WINDOW_POS']="%d,%d" %(xx,yy)
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -125,6 +128,7 @@ class Player(pygame.sprite.Sprite):
         self.power_time = pygame.time.get_ticks()
 
     def update(self, bbox):
+        global last_y
         # timeout for powerups
         if self.power >= 2 and pygame.time.get_ticks() - self.power_time > POWERUP_TIME:
             self.power -= 1
@@ -151,6 +155,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.x = (450 - bbox[0]) * 2
         if bbox[1] < last_y - 20:
             self.shoot()
+        last_y = bbox[1]
         
         
         # self.rect.x += self.speedx
@@ -198,7 +203,7 @@ class Mob(pygame.sprite.Sprite):
         # pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
         self.rect.x = random.randrange(WIDTH - self.rect.width)
         self.rect.bottom = random.randrange(-80, -20)
-        self.speedy = random.randrange(1, 8)
+        self.speedy = random.randrange(10, 20)
         self.speedx = random.randrange(-3, 3)
         self.rot = 0
         self.rot_speed = random.randrange(-8, 8)
@@ -222,7 +227,7 @@ class Mob(pygame.sprite.Sprite):
         if self.rect.top > HEIGHT + 10 or self.rect.left < -100 or self.rect.right > WIDTH + 100:
             self.rect.x = random.randrange(WIDTH - self.rect.width)
             self.rect.y = random.randrange(-100, -40)
-            self.speedy = random.randrange(1, 8)
+            self.speedy = random.randrange(10, 20)
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -283,7 +288,7 @@ class Explosion(pygame.sprite.Sprite):
 def show_go_screen():
     screen.blit(background, background_rect)
     draw_text(screen, "SHMUP!", 64, WIDTH / 2, HEIGHT / 4)
-    draw_text(screen, "Arrow keys move, Space to fire", 22,
+    draw_text(screen, "Move the rectangle, raise to fire", 22,
               WIDTH / 2, HEIGHT / 2)
     draw_text(screen, "Press a key to begin", 18, WIDTH / 2, HEIGHT * 3 / 4)
     pygame.display.flip()
@@ -295,6 +300,24 @@ def show_go_screen():
                 pygame.quit()
             if event.type == pygame.KEYUP:
                 waiting = False
+def start_menu():
+    screen.blit(background,background_rect)
+    draw_text(screen,"Welcome !", 64, WIDTH / 2, HEIGHT / 4)
+    draw_text(screen, "Here is guidance", 30, WIDTH / 2, HEIGHT / 4+70)
+    draw_text(screen,"Use mouse to draw a rectangle, ",22,WIDTH/2, HEIGHT/2)
+    draw_text(screen,"selecting the moving object ",22, WIDTH/2,HEIGHT/2+30)
+    draw_text(screen, "Press any key to continue..", 18, WIDTH / 2, HEIGHT*3 / 4)
+    pygame.display.flip()
+    waiting = True
+    while waiting:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYUP:
+                waiting = False
+
+
 
 # Load all game graphics
 background = pygame.image.load(path.join(img_dir, "starfield.png")).convert()
@@ -329,7 +352,7 @@ powerup_images = {}
 powerup_images['shield'] = pygame.image.load(path.join(img_dir, 'shield_gold.png')).convert()
 powerup_images['gun'] = pygame.image.load(path.join(img_dir, 'bolt_gold.png')).convert()
 
-
+start_menu()
 # Load all game sounds
 shoot_sound = pygame.mixer.Sound(path.join(snd_dir, 'pew.wav'))
 shield_sound = pygame.mixer.Sound(path.join(snd_dir, 'pow4.wav'))
@@ -342,12 +365,14 @@ pygame.mixer.music.load(path.join(snd_dir, 'tgfcoder-FrozenJam-SeamlessLoop.ogg'
 pygame.mixer.music.set_volume(0.4)
 
 pygame.mixer.music.play(loops=-1)
+
 # Game loop
 game_over = True
 running = True
 cap = cv2.VideoCapture(0)
 tracker = kcftracker.KCFTracker(True, True, True)
 cv2.namedWindow('tracking')
+cv2.moveWindow("winname",xx+WIDTH+10,yy)
 cv2.setMouseCallback('tracking',draw_boundingbox)
 while cap.isOpened():
     ret, frame = cap.read()
@@ -358,7 +383,10 @@ while cap.isOpened():
         cv2.rectangle(frame, (ix, iy), (cx, cy), (0, 255, 255), 1)
     elif (initTracking):
         cv2.rectangle(frame, (ix, iy), (ix + w, iy + h), (0, 255, 255), 2)
-
+        screen.blit(background,background_rect)
+        draw_text(screen,"Wait for seconds...", 22, WIDTH / 2, HEIGHT / 4)
+        draw_text(screen,"Preparing...", 22, WIDTH / 2, HEIGHT / 2)
+        pygame.display.flip()
         tracker.init([ix, iy, w, h], frame)
         last_y = iy
 

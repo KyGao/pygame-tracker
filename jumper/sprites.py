@@ -69,6 +69,7 @@ class Player(pg.sprite.Sprite):
         if self.jumping:
             if self.vel.y < -3:
                 self.vel.y = -3
+        
 
     def jump(self):
         # jump only if standing on a platform
